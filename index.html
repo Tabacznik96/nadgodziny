@@ -17,6 +17,7 @@
     --danger: #dc2626;
     --warn-bg: #fff3d6;
     --ok-bg: #e8f6ec;
+    --info-bg: #e7f0ff;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -29,6 +30,7 @@
       --accent-text: #0b1220;
       --warn-bg: #3a2f10;
       --ok-bg: #123322;
+      --info-bg: #142338;
     }
   }
   * { box-sizing: border-box; }
@@ -39,8 +41,9 @@
     color: var(--text);
     padding: 1.5rem;
   }
-  .wrap { max-width: 980px; margin: 0 auto; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
   h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1rem; margin: 0 0 .5rem; }
   .sub { color: var(--muted); margin: 0 0 1.25rem; font-size: .9rem; }
   .card {
     background: var(--card);
@@ -78,34 +81,43 @@
   th, td { text-align: left; padding: .45rem .4rem; border-bottom: 1px solid var(--border); }
   th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; }
   td input, td select { width: 100%; }
-  .actions-col { width: 40px; text-align: center; }
+  .actions-col { width: 90px; text-align: right; white-space: nowrap; }
+  .actions-col button { padding: .3rem .5rem; font-size: .78rem; }
   .summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: .75rem;
     margin-top: .5rem;
   }
   .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .6rem .75rem; }
   .stat .n { font-size: 1.25rem; font-weight: 700; }
   .stat .l { font-size: .75rem; color: var(--muted); }
-  .stat.ot50 { background: var(--warn-bg); }
-  .stat.ot100 { background: var(--ok-bg); }
+  .stat.ot { background: var(--warn-bg); }
+  .stat.ok { background: var(--ok-bg); }
+  .stat.info { background: var(--info-bg); }
   .note { font-size: .78rem; color: var(--muted); margin-top: .75rem; line-height: 1.4; }
   .topbar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; }
   .who { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
   .pill {
-    font-size: .75rem;
-    padding: .15rem .5rem;
+    display: inline-block;
+    font-size: .72rem;
+    padding: .1rem .45rem;
     border-radius: 999px;
     border: 1px solid var(--border);
-    color: var(--muted);
   }
+  .pill.st-zaplanowana { color: var(--muted); }
+  .pill.st-odbyta { background: var(--ok-bg); border-color: transparent; }
+  .pill.st-urlop { background: var(--info-bg); border-color: transparent; }
+  .pill.st-hdk { background: var(--warn-bg); border-color: transparent; }
+  .pill.st-odwolana { text-decoration: line-through; color: var(--muted); }
+  hr.sep { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+  .small { font-size: .78rem; color: var(--muted); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Kalkulator nadgodzin — dyżury</h1>
-  <p class="sub">Każda osoba wpisuje swoje imię i prowadzi własną listę dyżurów. Dane zapisują się tylko w tej przeglądarce (localStorage), oddzielnie dla każdego imienia.</p>
+  <p class="sub">Osobisty rejestr dyżurów z harmonogramu i tego, co faktycznie się wydarzyło (urlop, HDK). Dane zapisują się tylko w tej przeglądarce, oddzielnie dla każdego wpisanego imienia — jeśli wyślesz ten plik komuś innemu, wpisuje swoje dane pod swoim imieniem, bez wpływu na Twoje.</p>
 
   <div class="card">
     <div class="topbar">
@@ -121,17 +133,88 @@
         <button id="savePerson">Zapisz osobę</button>
         <button id="deletePerson" class="danger secondary">Usuń osobę</button>
       </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Okres rozliczeniowy</h2>
+    <div class="row">
       <div>
-        <label for="monthPicker">Miesiąc rozliczeniowy</label>
-        <input id="monthPicker" type="month">
+        <label for="periodSelect">Aktywny okres</label>
+        <select id="periodSelect"></select>
+      </div>
+      <div>
+        <button id="deletePeriod" class="danger secondary">Usuń okres</button>
+      </div>
+    </div>
+    <hr class="sep">
+    <div class="row">
+      <div>
+        <label for="pName">Nazwa okresu</label>
+        <input id="pName" type="text" placeholder="np. I półrocze 2026" style="width:200px">
+      </div>
+      <div>
+        <label for="pStart">Data od</label>
+        <input id="pStart" type="date">
+      </div>
+      <div>
+        <label for="pEnd">Data do</label>
+        <input id="pEnd" type="date">
+      </div>
+      <div>
+        <label for="pNorm">Norma godzin w okresie</label>
+        <input id="pNorm" type="number" min="0" step="1" style="width:120px" placeholder="np. 1032">
+      </div>
+      <div>
+        <button id="addPeriod">Dodaj okres</button>
       </div>
     </div>
   </div>
 
   <div class="card">
+    <h2>Pula urlopu</h2>
     <div class="row">
       <div>
-        <label for="fDate">Data rozpoczęcia dyżuru</label>
+        <label for="vacYear">Rok</label>
+        <input id="vacYear" type="number" style="width:100px">
+      </div>
+      <div>
+        <label for="vacBase">Dni podstawowe</label>
+        <input id="vacBase" type="number" min="0" style="width:100px">
+      </div>
+      <div>
+        <label for="vacExtra">Dni dodatkowe</label>
+        <input id="vacExtra" type="number" min="0" style="width:100px">
+      </div>
+      <div>
+        <label for="vacHoursPerDay">Godzin / dzień urlopu</label>
+        <input id="vacHoursPerDay" type="number" min="1" style="width:100px">
+      </div>
+      <div>
+        <button id="saveVacSettings">Zapisz ustawienia</button>
+      </div>
+    </div>
+    <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); max-width: 640px;">
+      <div class="stat">
+        <div class="n" id="vacPool">0</div>
+        <div class="l">dni urlopu w puli</div>
+      </div>
+      <div class="stat ot">
+        <div class="n" id="vacUsed">0</div>
+        <div class="l">wykorzystane dni</div>
+      </div>
+      <div class="stat ok">
+        <div class="n" id="vacLeft">0</div>
+        <div class="l">pozostało dni</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Wpisy (harmonogram i zdarzenia)</h2>
+    <div class="row">
+      <div>
+        <label for="fDate">Data</label>
         <input id="fDate" type="date">
       </div>
       <div>
@@ -140,22 +223,22 @@
       </div>
       <div>
         <label for="fEnd">Koniec</label>
-        <input id="fEnd" type="time" value="16:00">
+        <input id="fEnd" type="time" value="08:00">
       </div>
       <div>
-        <label for="fBreak">Przerwa (min)</label>
-        <input id="fBreak" type="number" min="0" step="5" value="0" style="width:80px">
-      </div>
-      <div>
-        <label for="fType">Typ dnia</label>
-        <select id="fType">
-          <option value="roboczy">Dzień roboczy</option>
-          <option value="wolny">Niedziela / święto / dzień wolny</option>
+        <label for="fStatus">Status</label>
+        <select id="fStatus">
+          <option value="zaplanowana">Zaplanowana (z harmonogramu)</option>
+          <option value="odbyta">Odbyta służba</option>
+          <option value="urlop">Urlop</option>
+          <option value="hdk">HDK</option>
+          <option value="odwolana">Odwołana</option>
         </select>
       </div>
       <div>
-        <button id="addShift">Dodaj dyżur</button>
+        <button id="addEntry">Dodaj wpis</button>
       </div>
+      <div id="editHint" class="small" style="display:none;">Edycja wpisu — zmiany zostaną zapisane po kliknięciu „Zapisz zmiany”. <button id="cancelEdit" class="secondary" type="button">Anuluj</button></div>
     </div>
 
     <table>
@@ -164,50 +247,59 @@
           <th>Data</th>
           <th>Początek</th>
           <th>Koniec</th>
-          <th>Przerwa</th>
-          <th>Typ dnia</th>
           <th>Godziny</th>
+          <th>Status</th>
           <th class="actions-col"></th>
         </tr>
       </thead>
-      <tbody id="shiftRows"></tbody>
+      <tbody id="entryRows"></tbody>
     </table>
+    <p class="small" id="noPeriodNote" style="display:none;">Dodaj i wybierz okres rozliczeniowy powyżej, żeby zacząć wpisywać dyżury.</p>
   </div>
 
   <div class="card">
-    <strong>Podsumowanie miesiąca</strong>
+    <strong>Podsumowanie okresu</strong>
     <div class="summary-grid">
+      <div class="stat info">
+        <div class="n" id="sumPlanTotal">0</div>
+        <div class="l">godziny wg harmonogramu</div>
+      </div>
       <div class="stat">
-        <div class="n" id="sumWorked">0</div>
-        <div class="l">przepracowane godziny</div>
+        <div class="n" id="sumOdbyte">0</div>
+        <div class="l">odbyte służby</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="sumUrlop">0</div>
+        <div class="l">urlop (zaliczony)</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="sumHdk">0</div>
+        <div class="l">HDK (zaliczone)</div>
+      </div>
+      <div class="stat ok">
+        <div class="n" id="sumRealized">0</div>
+        <div class="l">razem zrealizowane</div>
       </div>
       <div class="stat">
         <div class="n" id="sumNorm">0</div>
-        <div class="l">norma miesięczna</div>
+        <div class="l">norma okresu</div>
+      </div>
+      <div class="stat ot">
+        <div class="n" id="sumBalance">0</div>
+        <div class="l">bilans (+ nadgodziny / − brakuje)</div>
       </div>
       <div class="stat">
-        <div class="n" id="sumNormal">0</div>
-        <div class="l">godziny w normie</div>
-      </div>
-      <div class="stat ot50">
-        <div class="n" id="sumOt50">0</div>
-        <div class="l">nadgodziny 50%</div>
-      </div>
-      <div class="stat ot100">
-        <div class="n" id="sumOt100">0</div>
-        <div class="l">nadgodziny 100%</div>
-      </div>
-      <div class="stat">
-        <div class="n" id="sumOtTotal">0</div>
-        <div class="l">nadgodziny razem</div>
+        <div class="n" id="sumRemainingPlanned">0</div>
+        <div class="l">pozostało zaplanowanych godzin</div>
       </div>
     </div>
     <p class="note">
-      Zasady liczenia (uproszczone, orientacyjne — nie zastępują wyliczeń kadrowo-płacowych):
-      norma miesięczna = liczba dni roboczych pon.–pt. w miesiącu (bez świąt ustawowych) × 8h.
-      Godziny ponad 8h w dyżurze oznaczonym jako „dzień roboczy” liczone są jako nadgodziny 50%.
-      Cały czas przepracowany w dniu oznaczonym jako „niedziela / święto / dzień wolny” liczony jest jako nadgodziny 100%.
-      Jeśli po odjęciu nadgodzin dobowych suma godzin nadal przekracza normę miesięczną, nadwyżka doliczana jest do nadgodzin 50%.
+      Zasady liczenia: norma okresu jest wpisywana ręcznie (z oficjalnego harmonogramu/rozkazu).
+      Do „zrealizowanych godzin” liczą się: odbyte służby, godziny urlopu i godziny HDK w danym okresie.
+      Wpisy ze statusem „zaplanowana” nie wliczają się do realizacji, dopóki nie zmienisz ich statusu.
+      Urlop liczony jest w godzinach; liczba zużytych dni urlopu = godziny urlopu ÷ godzin na dzień
+      (np. 24h służby wziętej jako urlop = 3 dni z puli). HDK dolicza godziny tak, jakby służba
+      została odbyta, ale nie zabiera dni z puli urlopu.
     </p>
   </div>
 </div>
@@ -216,96 +308,50 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "nadgodziny.v1";
+  const STORAGE_KEY = "nadgodziny.v2";
 
   function loadStore() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { people: {}, lastPerson: "" };
-    } catch (e) {
-      return { people: {}, lastPerson: "" };
-    }
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (parsed && parsed.people) return parsed;
+    } catch (e) { /* fall through */ }
+    return { people: {}, lastPerson: "" };
   }
-  function saveStore(store) {
+  function saveStore() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  }
+  function uid() {
+    return Date.now() + "-" + Math.random().toString(36).slice(2, 7);
   }
 
   let store = loadStore();
 
-  function currentMonthValue() {
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  function blankPerson() {
+    return {
+      vacation: { baseDays: 26, extraDays: 13, hoursPerDay: 8 },
+      periods: [],
+      activePeriodId: "",
+      entries: [],
+    };
+  }
+  function ensurePerson(name) {
+    if (!store.people[name]) store.people[name] = blankPerson();
+    return store.people[name];
+  }
+  function currentPersonData() {
+    const name = store.lastPerson;
+    if (!name) return null;
+    return store.people[name] || null;
   }
 
-  // ---- Polish public holidays (fixed + movable via Easter) ----
-  function easterSunday(year) {
-    // Anonymous Gregorian algorithm
-    const a = year % 19;
-    const b = Math.floor(year / 100);
-    const c = year % 100;
-    const d = Math.floor(b / 4);
-    const e = b % 4;
-    const f = Math.floor((b + 8) / 25);
-    const g = Math.floor((b - f + 1) / 3);
-    const h = (19 * a + b - d - g + 15) % 30;
-    const i = Math.floor(c / 4);
-    const k = c % 4;
-    const l = (32 + 2 * e + 2 * i - h - k) % 7;
-    const m = Math.floor((a + 11 * h + 22 * l) / 451);
-    const month = Math.floor((h + l - 7 * m + 114) / 31);
-    const day = ((h + l - 7 * m + 114) % 31) + 1;
-    return new Date(year, month - 1, day);
-  }
-  function addDays(date, n) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + n);
-    return d;
-  }
-  function dateKey(d) {
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  }
-  function polishHolidays(year) {
-    const easter = easterSunday(year);
-    const dates = [
-      new Date(year, 0, 1),
-      new Date(year, 0, 6),
-      easter,
-      addDays(easter, 1),
-      new Date(year, 4, 1),
-      new Date(year, 4, 3),
-      addDays(easter, 49),
-      addDays(easter, 60),
-      new Date(year, 7, 15),
-      new Date(year, 10, 1),
-      new Date(year, 10, 11),
-      new Date(year, 11, 25),
-      new Date(year, 11, 26),
-    ];
-    return new Set(dates.map(dateKey));
-  }
-
-  function monthlyNormHours(year, monthIndex0) {
-    const holidays = polishHolidays(year);
-    const daysInMonth = new Date(year, monthIndex0 + 1, 0).getDate();
-    let workDays = 0;
-    for (let day = 1; day <= daysInMonth; day++) {
-      const d = new Date(year, monthIndex0, day);
-      const dow = d.getDay(); // 0 = Sun, 6 = Sat
-      if (dow === 0 || dow === 6) continue;
-      if (holidays.has(dateKey(d))) continue;
-      workDays++;
-    }
-    return workDays * 8;
-  }
-
-  // ---- Shift duration ----
-  function shiftHours(startHHMM, endHHMM, breakMin) {
+  // ---- duration ----
+  function durationHours(startHHMM, endHHMM) {
     const [sh, sm] = startHHMM.split(":").map(Number);
     const [eh, em] = endHHMM.split(":").map(Number);
     let startMin = sh * 60 + sm;
     let endMin = eh * 60 + em;
-    if (endMin <= startMin) endMin += 24 * 60; // crosses midnight
-    const totalMin = endMin - startMin - (Number(breakMin) || 0);
-    return Math.max(0, totalMin / 60);
+    if (endMin <= startMin) endMin += 24 * 60; // crosses midnight (max 1 day rollover)
+    return (endMin - startMin) / 60;
   }
 
   // ---- DOM refs ----
@@ -313,20 +359,37 @@
   const personName = document.getElementById("personName");
   const savePersonBtn = document.getElementById("savePerson");
   const deletePersonBtn = document.getElementById("deletePerson");
-  const monthPicker = document.getElementById("monthPicker");
-  const shiftRows = document.getElementById("shiftRows");
+
+  const periodSelect = document.getElementById("periodSelect");
+  const deletePeriodBtn = document.getElementById("deletePeriod");
+  const pName = document.getElementById("pName");
+  const pStart = document.getElementById("pStart");
+  const pEnd = document.getElementById("pEnd");
+  const pNorm = document.getElementById("pNorm");
+  const addPeriodBtn = document.getElementById("addPeriod");
+
+  const vacYear = document.getElementById("vacYear");
+  const vacBase = document.getElementById("vacBase");
+  const vacExtra = document.getElementById("vacExtra");
+  const vacHoursPerDay = document.getElementById("vacHoursPerDay");
+  const saveVacSettingsBtn = document.getElementById("saveVacSettings");
 
   const fDate = document.getElementById("fDate");
   const fStart = document.getElementById("fStart");
   const fEnd = document.getElementById("fEnd");
-  const fBreak = document.getElementById("fBreak");
-  const fType = document.getElementById("fType");
-  const addShiftBtn = document.getElementById("addShift");
+  const fStatus = document.getElementById("fStatus");
+  const addEntryBtn = document.getElementById("addEntry");
+  const editHint = document.getElementById("editHint");
+  const cancelEditBtn = document.getElementById("cancelEdit");
+  const entryRows = document.getElementById("entryRows");
+  const noPeriodNote = document.getElementById("noPeriodNote");
 
+  let editingId = null;
+
+  // ---- person management ----
   function peopleNames() {
     return Object.keys(store.people).sort((a, b) => a.localeCompare(b, "pl"));
   }
-
   function refreshPersonSelect() {
     personSelect.innerHTML = "";
     const names = peopleNames();
@@ -344,22 +407,9 @@
       personSelect.appendChild(opt);
     });
   }
-
-  function activePerson() {
-    return store.lastPerson;
-  }
-
-  function ensurePerson(name) {
-    if (!store.people[name]) {
-      store.people[name] = { shifts: [] };
-    }
-  }
-
   function setActivePerson(name) {
     store.lastPerson = name;
-    personName.value = name;
-    personSelect.value = name;
-    saveStore(store);
+    saveStore();
     render();
   }
 
@@ -368,20 +418,16 @@
     if (!name) return;
     ensurePerson(name);
     setActivePerson(name);
-    refreshPersonSelect();
-    personSelect.value = name;
   });
 
   deletePersonBtn.addEventListener("click", () => {
-    const name = activePerson();
+    const name = store.lastPerson;
     if (!name || !store.people[name]) return;
-    if (!confirm('Usunąć osobę "' + name + '" wraz z jej dyżurami?')) return;
+    if (!confirm('Usunąć osobę "' + name + '" wraz z jej danymi?')) return;
     delete store.people[name];
     const remaining = peopleNames();
     store.lastPerson = remaining[0] || "";
-    saveStore(store);
-    refreshPersonSelect();
-    personName.value = store.lastPerson;
+    saveStore();
     render();
   });
 
@@ -389,47 +435,165 @@
     if (personSelect.value) setActivePerson(personSelect.value);
   });
 
-  monthPicker.addEventListener("change", render);
-
-  addShiftBtn.addEventListener("click", () => {
-    const name = activePerson();
-    if (!name) {
-      alert("Najpierw wpisz i zapisz imię osoby.");
+  // ---- period management ----
+  addPeriodBtn.addEventListener("click", () => {
+    const name = store.lastPerson;
+    if (!name) { alert("Najpierw wpisz i zapisz imię osoby."); return; }
+    if (!pName.value.trim() || !pStart.value || !pEnd.value || !pNorm.value) {
+      alert("Uzupełnij nazwę, daty i normę godzin okresu.");
       return;
     }
+    if (pEnd.value < pStart.value) {
+      alert("Data „do” nie może być wcześniejsza niż data „od”.");
+      return;
+    }
+    const person = ensurePerson(name);
+    const period = {
+      id: uid(),
+      name: pName.value.trim(),
+      start: pStart.value,
+      end: pEnd.value,
+      normHours: Number(pNorm.value) || 0,
+    };
+    person.periods.push(period);
+    person.activePeriodId = period.id;
+    saveStore();
+    pName.value = "";
+    pStart.value = "";
+    pEnd.value = "";
+    pNorm.value = "";
+    render();
+  });
+
+  periodSelect.addEventListener("change", () => {
+    const person = currentPersonData();
+    if (!person) return;
+    person.activePeriodId = periodSelect.value;
+    saveStore();
+    render();
+  });
+
+  deletePeriodBtn.addEventListener("click", () => {
+    const person = currentPersonData();
+    if (!person || !person.activePeriodId) return;
+    const period = person.periods.find((p) => p.id === person.activePeriodId);
+    if (!period) return;
+    if (!confirm('Usunąć okres "' + period.name + '"? Wpisy z tego zakresu dat nie zostaną usunięte.')) return;
+    person.periods = person.periods.filter((p) => p.id !== period.id);
+    person.activePeriodId = person.periods.length ? person.periods[0].id : "";
+    saveStore();
+    render();
+  });
+
+  // ---- vacation settings ----
+  saveVacSettingsBtn.addEventListener("click", () => {
+    const person = currentPersonData();
+    if (!person) { alert("Najpierw wpisz i zapisz imię osoby."); return; }
+    person.vacation = {
+      baseDays: Number(vacBase.value) || 0,
+      extraDays: Number(vacExtra.value) || 0,
+      hoursPerDay: Number(vacHoursPerDay.value) || 8,
+    };
+    saveStore();
+    render();
+  });
+
+  // ---- entries ----
+  function resetEntryForm() {
+    editingId = null;
+    editHint.style.display = "none";
+    addEntryBtn.textContent = "Dodaj wpis";
+    fDate.value = new Date().toISOString().slice(0, 10);
+    fStart.value = "08:00";
+    fEnd.value = "08:00";
+    fStatus.value = "zaplanowana";
+  }
+
+  cancelEditBtn.addEventListener("click", resetEntryForm);
+
+  addEntryBtn.addEventListener("click", () => {
+    const name = store.lastPerson;
+    if (!name) { alert("Najpierw wpisz i zapisz imię osoby."); return; }
     if (!fDate.value || !fStart.value || !fEnd.value) {
       alert("Uzupełnij datę oraz godziny początku i końca.");
       return;
     }
-    ensurePerson(name);
-    store.people[name].shifts.push({
-      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
-      date: fDate.value,
-      start: fStart.value,
-      end: fEnd.value,
-      breakMin: Number(fBreak.value) || 0,
-      type: fType.value,
-    });
-    saveStore(store);
+    const person = ensurePerson(name);
+    if (person.periods.length === 0) {
+      alert("Najpierw dodaj okres rozliczeniowy powyżej.");
+      return;
+    }
+    if (editingId) {
+      const entry = person.entries.find((e) => e.id === editingId);
+      if (entry) {
+        entry.date = fDate.value;
+        entry.start = fStart.value;
+        entry.end = fEnd.value;
+        entry.status = fStatus.value;
+      }
+    } else {
+      person.entries.push({
+        id: uid(),
+        date: fDate.value,
+        start: fStart.value,
+        end: fEnd.value,
+        status: fStatus.value,
+      });
+    }
+    saveStore();
+    resetEntryForm();
     render();
   });
 
-  function removeShift(id) {
-    const name = activePerson();
-    if (!name) return;
-    store.people[name].shifts = store.people[name].shifts.filter((s) => s.id !== id);
-    saveStore(store);
+  function startEdit(id) {
+    const person = currentPersonData();
+    if (!person) return;
+    const entry = person.entries.find((e) => e.id === id);
+    if (!entry) return;
+    editingId = id;
+    fDate.value = entry.date;
+    fStart.value = entry.start;
+    fEnd.value = entry.end;
+    fStatus.value = entry.status;
+    editHint.style.display = "inline-block";
+    addEntryBtn.textContent = "Zapisz zmiany";
+  }
+
+  function removeEntry(id) {
+    const person = currentPersonData();
+    if (!person) return;
+    person.entries = person.entries.filter((e) => e.id !== id);
+    saveStore();
     render();
   }
 
-  function shiftsForMonth(name, ym) {
-    if (!store.people[name]) return [];
-    return store.people[name].shifts
-      .filter((s) => s.date.slice(0, 7) === ym)
+  function changeStatusInline(id, newStatus) {
+    const person = currentPersonData();
+    if (!person) return;
+    const entry = person.entries.find((e) => e.id === id);
+    if (!entry) return;
+    entry.status = newStatus;
+    saveStore();
+    render();
+  }
+
+  const STATUS_LABELS = {
+    zaplanowana: "Zaplanowana",
+    odbyta: "Odbyta służba",
+    urlop: "Urlop",
+    hdk: "HDK",
+    odwolana: "Odwołana",
+  };
+
+  function entriesForPeriod(person, period) {
+    if (!period) return [];
+    return person.entries
+      .filter((e) => e.date >= period.start && e.date <= period.end)
       .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
   }
 
   function render() {
+    // person select
     const names = peopleNames();
     if (names.length && !names.includes(store.lastPerson)) {
       store.lastPerson = names[0];
@@ -438,66 +602,124 @@
     personSelect.value = store.lastPerson || "";
     personName.value = store.lastPerson || "";
 
-    const name = activePerson();
-    const ym = monthPicker.value || currentMonthValue();
-    monthPicker.value = ym;
+    const person = currentPersonData();
 
-    shiftRows.innerHTML = "";
-    let workedTotal = 0;
-    let ot50FromDaily = 0;
-    let ot100 = 0;
-    let normalPortion = 0;
-
-    const shifts = name ? shiftsForMonth(name, ym) : [];
-
-    shifts.forEach((s) => {
-      const hours = shiftHours(s.start, s.end, s.breakMin);
-      workedTotal += hours;
-
-      if (s.type === "wolny") {
-        ot100 += hours;
-      } else {
-        const daily = Math.min(hours, 8);
-        const dailyOt = Math.max(0, hours - 8);
-        normalPortion += daily;
-        ot50FromDaily += dailyOt;
+    // periods
+    periodSelect.innerHTML = "";
+    if (!person || person.periods.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "— brak okresów —";
+      periodSelect.appendChild(opt);
+    } else {
+      if (!person.periods.find((p) => p.id === person.activePeriodId)) {
+        person.activePeriodId = person.periods[0].id;
       }
+      person.periods
+        .slice()
+        .sort((a, b) => a.start.localeCompare(b.start))
+        .forEach((p) => {
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = p.name + " (" + p.start + " – " + p.end + ", norma " + p.normHours + "h)";
+          periodSelect.appendChild(opt);
+        });
+      periodSelect.value = person.activePeriodId;
+    }
+
+    const activePeriod = person && person.periods.find((p) => p.id === person.activePeriodId);
+
+    // vacation settings display
+    const vac = person ? person.vacation : blankPerson().vacation;
+    vacBase.value = vac.baseDays;
+    vacExtra.value = vac.extraDays;
+    vacHoursPerDay.value = vac.hoursPerDay;
+    if (!vacYear.value) {
+      vacYear.value = activePeriod ? Number(activePeriod.start.slice(0, 4)) : new Date().getFullYear();
+    }
+
+    // entries table (filtered to active period)
+    entryRows.innerHTML = "";
+    noPeriodNote.style.display = activePeriod ? "none" : "block";
+
+    let planTotal = 0;
+    let odbyte = 0;
+    let urlopHours = 0;
+    let hdkHours = 0;
+    let remainingPlanned = 0;
+
+    const entries = person && activePeriod ? entriesForPeriod(person, activePeriod) : [];
+
+    entries.forEach((e) => {
+      const hours = durationHours(e.start, e.end);
+      if (e.status !== "odwolana") planTotal += hours;
+      if (e.status === "odbyta") odbyte += hours;
+      if (e.status === "urlop") urlopHours += hours;
+      if (e.status === "hdk") hdkHours += hours;
+      if (e.status === "zaplanowana") remainingPlanned += hours;
 
       const tr = document.createElement("tr");
+      const statusOptions = Object.keys(STATUS_LABELS)
+        .map((k) => '<option value="' + k + '"' + (k === e.status ? " selected" : "") + ">" + STATUS_LABELS[k] + "</option>")
+        .join("");
       tr.innerHTML =
-        "<td>" + s.date + "</td>" +
-        "<td>" + s.start + "</td>" +
-        "<td>" + s.end + "</td>" +
-        "<td>" + s.breakMin + " min</td>" +
-        "<td>" + (s.type === "wolny" ? "Niedziela/święto/wolne" : "Roboczy") + "</td>" +
+        "<td>" + e.date + "</td>" +
+        "<td>" + e.start + "</td>" +
+        "<td>" + e.end + "</td>" +
         "<td>" + hours.toFixed(2) + " h</td>" +
-        '<td class="actions-col"><button class="secondary danger" data-id="' + s.id + '">✕</button></td>';
-      shiftRows.appendChild(tr);
+        '<td><select data-status-id="' + e.id + '">' + statusOptions + "</select></td>" +
+        '<td class="actions-col">' +
+          '<button class="secondary" data-edit-id="' + e.id + '">Edytuj</button> ' +
+          '<button class="secondary danger" data-remove-id="' + e.id + '">✕</button>' +
+        "</td>";
+      entryRows.appendChild(tr);
     });
 
-    shiftRows.querySelectorAll("button[data-id]").forEach((btn) => {
-      btn.addEventListener("click", () => removeShift(btn.getAttribute("data-id")));
+    entryRows.querySelectorAll("select[data-status-id]").forEach((sel) => {
+      sel.addEventListener("change", () => changeStatusInline(sel.getAttribute("data-status-id"), sel.value));
+    });
+    entryRows.querySelectorAll("button[data-edit-id]").forEach((btn) => {
+      btn.addEventListener("click", () => startEdit(btn.getAttribute("data-edit-id")));
+    });
+    entryRows.querySelectorAll("button[data-remove-id]").forEach((btn) => {
+      btn.addEventListener("click", () => removeEntry(btn.getAttribute("data-remove-id")));
     });
 
-    const [year, month] = ym.split("-").map(Number);
-    const norm = monthlyNormHours(year, month - 1);
+    const realized = odbyte + urlopHours + hdkHours;
+    const norm = activePeriod ? activePeriod.normHours : 0;
+    const balance = realized - norm;
 
-    // Excess above monthly norm (after removing daily-overtime hours already counted) is 50% too
-    const weeklyExcess = Math.max(0, normalPortion - norm);
-    const ot50 = ot50FromDaily + weeklyExcess;
-    const normalCounted = normalPortion - weeklyExcess;
-
-    document.getElementById("sumWorked").textContent = workedTotal.toFixed(2);
+    document.getElementById("sumPlanTotal").textContent = planTotal.toFixed(2);
+    document.getElementById("sumOdbyte").textContent = odbyte.toFixed(2);
+    document.getElementById("sumUrlop").textContent = urlopHours.toFixed(2);
+    document.getElementById("sumHdk").textContent = hdkHours.toFixed(2);
+    document.getElementById("sumRealized").textContent = realized.toFixed(2);
     document.getElementById("sumNorm").textContent = norm.toFixed(2);
-    document.getElementById("sumNormal").textContent = normalCounted.toFixed(2);
-    document.getElementById("sumOt50").textContent = ot50.toFixed(2);
-    document.getElementById("sumOt100").textContent = ot100.toFixed(2);
-    document.getElementById("sumOtTotal").textContent = (ot50 + ot100).toFixed(2);
+    const balanceEl = document.getElementById("sumBalance");
+    balanceEl.textContent = (balance >= 0 ? "+" : "") + balance.toFixed(2);
+    document.getElementById("sumRemainingPlanned").textContent = remainingPlanned.toFixed(2);
+
+    // vacation pool for selected year
+    const year = String(Number(vacYear.value) || new Date().getFullYear());
+    const pool = vac.baseDays + vac.extraDays;
+    let usedHours = 0;
+    if (person) {
+      person.entries.forEach((e) => {
+        if (e.status === "urlop" && e.date.slice(0, 4) === year) {
+          usedHours += durationHours(e.start, e.end);
+        }
+      });
+    }
+    const usedDays = usedHours / (vac.hoursPerDay || 8);
+    document.getElementById("vacPool").textContent = pool;
+    document.getElementById("vacUsed").textContent = usedDays.toFixed(2);
+    document.getElementById("vacLeft").textContent = (pool - usedDays).toFixed(2);
   }
 
+  vacYear.addEventListener("change", render);
+
   // ---- init ----
-  fDate.value = new Date().toISOString().slice(0, 10);
-  monthPicker.value = currentMonthValue();
+  resetEntryForm();
   if (!store.lastPerson) {
     const names = peopleNames();
     store.lastPerson = names[0] || "";
