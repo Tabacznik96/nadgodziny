@@ -155,6 +155,7 @@
   .cal-badge.plan.type-uw { border-color: var(--uw); color: var(--uw); }
   .cal-badge.plan.type-ud { border-color: var(--ud); color: var(--ud); }
   .cal-badge.plan.type-hdk { border-color: var(--hdk); color: var(--hdk); }
+  .cal-badge.plan.type-wolne { border-color: var(--muted); color: var(--muted); }
   .cal-badge.actual.type-sluzba { background: var(--sl); color: #fff; }
   .cal-badge.actual.type-uw { background: var(--uw); color: #fff; }
   .cal-badge.actual.type-ud { background: var(--ud); color: #fff; }
@@ -389,12 +390,19 @@
         <div class="n" id="sumRemainingPlanned">0</div>
         <div class="l">z harmonogramu jeszcze nie potwierdzone</div>
       </div>
+      <div class="stat ot">
+        <div class="n" id="sumCallIn">0</div>
+        <div class="l">wezwania w dni wolne (nieplanowane)</div>
+      </div>
     </div>
     <p class="note">
       Zasady liczenia: norma okresu jest wpisywana ręcznie (z oficjalnego harmonogramu/rozkazu).
       Do „zrealizowanych godzin” i bilansu liczy się wyłącznie to, co wpiszesz jako <strong>Rzeczywistość</strong>
       (odbyte służby oraz godziny UW, UD, HDK). Wpisy z sekcji <strong>Harmonogram</strong> służą tylko do
       porównania z tym, co się faktycznie wydarzyło, i do wyliczenia normy — same z siebie nie liczą się do bilansu.
+      Jeśli harmonogram ma zaznaczone „Wolne (bez służby)”, a w Rzeczywistości mimo to wpiszesz Służbę,
+      te godziny liczą się normalnie do „odbytych służb”, ale dodatkowo pokazują się osobno jako
+      „wezwania w dni wolne” — to typowe nieplanowane nadgodziny.
       Liczba zużytych dni urlopu = godziny rzeczywistego wpisu ÷ godzin na dzień (np. 24h służby wziętej jako urlop = 3 dni z puli).
       HDK dolicza godziny tak, jakby służba została odbyta, ale nie zabiera dni z żadnej puli urlopu.
     </p>
@@ -413,13 +421,17 @@
         <button class="cat-btn" data-layer="plan" data-cat="uw">UW</button>
         <button class="cat-btn" data-layer="plan" data-cat="ud">UD</button>
         <button class="cat-btn" data-layer="plan" data-cat="hdk">HDK</button>
+        <button class="cat-btn" data-layer="plan" data-cat="wolne" style="grid-column: span 2;">Wolne (bez służby)</button>
       </div>
-      <div class="hours-chip-row" data-layer="plan">
-        <button class="chip" data-layer="plan" data-hours="24">24h</button>
-        <button class="chip" data-layer="plan" data-hours="16">16h</button>
-        <button class="chip" data-layer="plan" data-hours="8">8h</button>
+      <div class="hours-block" data-layer="plan">
+        <div class="hours-chip-row" data-layer="plan">
+          <button class="chip" data-layer="plan" data-hours="24">24h</button>
+          <button class="chip" data-layer="plan" data-hours="16">16h</button>
+          <button class="chip" data-layer="plan" data-hours="8">8h</button>
+        </div>
+        <input class="hours-custom" data-layer="plan" type="number" min="0" step="0.5" placeholder="inna liczba godzin">
       </div>
-      <input class="hours-custom" data-layer="plan" type="number" min="0" step="0.5" placeholder="inna liczba godzin">
+      <p class="small" id="wolneHint" style="display:none;">Dzień oznaczony jako wolny od służby wg harmonogramu — bez godzin. Jeśli w „Rzeczywistości” mimo to wpiszesz Służbę, kalkulator policzy to jako wezwanie / nieplanowane nadgodziny.</p>
       <div class="section-actions">
         <button class="danger secondary btn-clear" data-layer="plan">Usuń plan</button>
         <button class="btn-save" data-layer="plan">Zapisz plan</button>
@@ -563,7 +575,7 @@
   const DOW_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Ni"];
   const MONTH_LABELS = ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
     "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"];
-  const TYPE_LABELS = { sluzba: "S", uw: "UW", ud: "UD", hdk: "HDK" };
+  const TYPE_LABELS = { sluzba: "S", uw: "UW", ud: "UD", hdk: "HDK", wolne: "WOLNE" };
 
   const today = new Date();
   let calYear = today.getFullYear();
@@ -729,6 +741,11 @@
     sectionEls(layer).catBtns.forEach((b) => {
       b.classList.toggle("active", b.getAttribute("data-cat") === cat);
     });
+    const isWolne = layer === "plan" && cat === "wolne";
+    const hoursBlock = document.querySelector('.hours-block[data-layer="' + layer + '"]');
+    if (hoursBlock) hoursBlock.style.display = isWolne ? "none" : "block";
+    const wolneHint = document.getElementById("wolneHint");
+    if (wolneHint) wolneHint.style.display = isWolne ? "block" : "none";
   }
 
   function setHoursValue(layer, hours) {
@@ -794,8 +811,13 @@
       if (!person || !modalDate) return;
       const cat = selectedCategory[layer];
       if (!cat) { alert("Wybierz typ wpisu."); return; }
-      const hours = Number(sectionEls(layer).customInput.value);
-      if (!hours || hours <= 0) { alert("Podaj liczbę godzin."); return; }
+      let hours;
+      if (layer === "plan" && cat === "wolne") {
+        hours = 0;
+      } else {
+        hours = Number(sectionEls(layer).customInput.value);
+        if (!hours || hours <= 0) { alert("Podaj liczbę godzin."); return; }
+      }
 
       const existing = findEntry(person, modalDate, layer);
       if (existing) {
@@ -877,7 +899,8 @@
         const plan = planByDate[cell.date];
         const actual = actualByDate[cell.date];
         if (plan) {
-          inner += '<div class="cal-badge plan type-' + plan.type + '">' + TYPE_LABELS[plan.type] + " " + plan.hours + "h</div>";
+          const planLabel = plan.type === "wolne" ? TYPE_LABELS.wolne : TYPE_LABELS[plan.type] + " " + plan.hours + "h";
+          inner += '<div class="cal-badge plan type-' + plan.type + '">' + planLabel + "</div>";
         }
         if (actual) {
           inner += '<div class="cal-badge actual type-' + actual.type + '">' + TYPE_LABELS[actual.type] + " " + actual.hours + "h</div>";
@@ -948,15 +971,22 @@
     let uwHours = 0;
     let udHours = 0;
     let hdkHours = 0;
+    let callInHours = 0;
 
     const entries = person && activePeriod ? entriesForPeriod(person, activePeriod) : [];
     const actualDates = new Set(entries.filter((e) => e.layer === "actual").map((e) => e.date));
+    const planMap = {};
+    entries.forEach((e) => { if (e.layer === "plan") planMap[e.date] = e; });
 
     entries.forEach((e) => {
       if (e.layer === "plan") {
         planTotal += e.hours;
       } else {
-        if (e.type === "sluzba") odbyte += e.hours;
+        if (e.type === "sluzba") {
+          odbyte += e.hours;
+          const plan = planMap[e.date];
+          if (plan && plan.type === "wolne") callInHours += e.hours;
+        }
         if (e.type === "uw") uwHours += e.hours;
         if (e.type === "ud") udHours += e.hours;
         if (e.type === "hdk") hdkHours += e.hours;
@@ -964,7 +994,7 @@
     });
 
     const remainingPlanned = entries
-      .filter((e) => e.layer === "plan" && !actualDates.has(e.date))
+      .filter((e) => e.layer === "plan" && e.type !== "wolne" && !actualDates.has(e.date))
       .reduce((sum, e) => sum + e.hours, 0);
 
     const realized = odbyte + uwHours + udHours + hdkHours;
@@ -981,6 +1011,7 @@
     const balanceEl = document.getElementById("sumBalance");
     balanceEl.textContent = (balance >= 0 ? "+" : "") + balance.toFixed(2);
     document.getElementById("sumRemainingPlanned").textContent = remainingPlanned.toFixed(2);
+    document.getElementById("sumCallIn").textContent = callInHours.toFixed(2);
 
     // vacation pools for selected year (actual entries only)
     const year = String(Number(vacYear.value) || new Date().getFullYear());
