@@ -52,6 +52,7 @@
   .wrap { max-width: 1100px; margin: 0 auto; }
   h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
   h2 { font-size: 1rem; margin: 0 0 .5rem; }
+  h4 { font-size: .88rem; margin: 0 0 .5rem; }
   .sub { color: var(--muted); margin: 0 0 1.25rem; font-size: .9rem; }
   .card {
     background: var(--card);
@@ -102,6 +103,9 @@
   .who { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
   hr.sep { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
   .small { font-size: .78rem; color: var(--muted); }
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .78rem; color: var(--muted); margin-bottom: .5rem; }
+  .legend span { display: inline-flex; align-items: center; gap: .3rem; }
+  .legend i { width: .8rem; height: .8rem; border-radius: 3px; display: inline-block; }
 
   /* calendar */
   .cal-header {
@@ -126,7 +130,7 @@
     padding-bottom: .3rem;
   }
   .cal-cell {
-    min-height: 68px;
+    min-height: 74px;
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: .3rem .35rem;
@@ -138,19 +142,23 @@
   .cal-cell.today { border-color: var(--accent); border-width: 2px; }
   .cal-daynum { font-size: .78rem; color: var(--muted); }
   .cal-badge {
-    display: inline-block;
-    font-size: .74rem;
+    display: block;
+    font-size: .7rem;
     font-weight: 700;
     border-radius: 4px;
     padding: 0 .25rem;
     margin-top: .2rem;
+    white-space: nowrap;
   }
-  .cal-badge.sl-planowana { color: var(--sl); border: 1px solid var(--sl); }
-  .cal-badge.sl-odbyta { background: var(--sl); color: #fff; }
-  .cal-badge.uw { background: var(--uw); color: #fff; }
-  .cal-badge.ud { background: var(--ud); color: #fff; }
-  .cal-badge.hdk { background: var(--hdk); color: #fff; }
-  .cal-hours { font-size: .74rem; color: var(--muted); margin-top: .15rem; }
+  .cal-badge.plan { background: transparent; border: 1.5px solid; }
+  .cal-badge.plan.type-sluzba { border-color: var(--sl); color: var(--sl); }
+  .cal-badge.plan.type-uw { border-color: var(--uw); color: var(--uw); }
+  .cal-badge.plan.type-ud { border-color: var(--ud); color: var(--ud); }
+  .cal-badge.plan.type-hdk { border-color: var(--hdk); color: var(--hdk); }
+  .cal-badge.actual.type-sluzba { background: var(--sl); color: #fff; }
+  .cal-badge.actual.type-uw { background: var(--uw); color: #fff; }
+  .cal-badge.actual.type-ud { background: var(--ud); color: #fff; }
+  .cal-badge.actual.type-hdk { background: var(--hdk); color: #fff; }
 
   /* modal */
   .modal-overlay {
@@ -162,6 +170,7 @@
     justify-content: center;
     z-index: 50;
     padding: 1rem;
+    overflow-y: auto;
   }
   .modal-overlay.open { display: flex; }
   .modal {
@@ -170,38 +179,51 @@
     border-radius: 12px;
     padding: 1.25rem;
     width: 100%;
-    max-width: 380px;
+    max-width: 400px;
+    margin: auto;
   }
   .modal h3 { margin: 0 0 .75rem; font-size: 1rem; }
-  .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: .75rem; }
+  .modal-section { padding: .5rem 0; }
+  .modal-section .tag {
+    display: inline-block;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--muted);
+    margin-bottom: .35rem;
+  }
+  .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .4rem; margin-bottom: .5rem; }
   .cat-btn {
-    padding: .6rem;
+    padding: .5rem;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--bg);
     color: var(--text);
     font-weight: 600;
-    font-size: .85rem;
+    font-size: .82rem;
   }
   .cat-btn.active { border-color: var(--accent); background: var(--info-bg); }
   .hours-chip-row { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .5rem; }
   .chip {
-    padding: .35rem .6rem;
+    padding: .3rem .6rem;
     border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--bg);
     color: var(--text);
-    font-size: .82rem;
+    font-size: .8rem;
   }
   .chip.active { border-color: var(--accent); background: var(--info-bg); }
-  .modal-actions { display: flex; justify-content: space-between; gap: .5rem; margin-top: 1rem; }
+  .hours-custom { width: 100%; margin-bottom: .5rem; }
+  .section-actions { display: flex; justify-content: flex-end; gap: .5rem; }
+  .section-actions button { padding: .4rem .75rem; font-size: .8rem; }
+  .modal-actions { display: flex; justify-content: flex-end; margin-top: 1rem; }
   .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; float: right; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Kalkulator nadgodzin — dyżury</h1>
-  <p class="sub">Osobisty rejestr dyżurów. Klikasz dzień w kalendarzu i dwoma kliknięciami zaznaczasz co się wydarzyło. Dane zapisują się tylko w tej przeglądarce, oddzielnie dla każdego wpisanego imienia — jeśli wyślesz ten plik komuś innemu, wpisuje swoje dane pod swoim imieniem, bez wpływu na Twoje.</p>
+  <p class="sub">Osobisty rejestr dyżurów. Dla każdego dnia wpisujesz osobno co jest w harmonogramie i osobno co faktycznie się wydarzyło — więc możesz np. wpisać cały harmonogram ze stycznia z góry, a potem dopisywać realne służby i urlopy w miarę jak mijają, i porównać jedno z drugim. Dane zapisują się tylko w tej przeglądarce, oddzielnie dla każdego wpisanego imienia.</p>
 
   <div class="card">
     <div class="topbar">
@@ -278,6 +300,7 @@
         <button id="saveVacSettings">Zapisz ustawienia</button>
       </div>
     </div>
+    <p class="small">Liczone wyłącznie na podstawie tego, co wpiszesz jako „Rzeczywistość” w kalendarzu (plan urlopu nie zabiera dni z puli, dopóki go nie potwierdzisz jako rzeczywisty).</p>
     <div class="summary-grid" style="max-width: 760px;">
       <div class="stat">
         <div class="n" id="uwPool">0</div>
@@ -308,6 +331,12 @@
 
   <div class="card">
     <h2>Kalendarz</h2>
+    <div class="legend">
+      <span><i style="background:var(--sl); border:1.5px solid var(--sl);"></i>plan (obrys) / rzeczywistość (wypełnione) — Służba</span>
+      <span><i style="background:var(--uw);"></i>UW</span>
+      <span><i style="background:var(--ud);"></i>UD</span>
+      <span><i style="background:var(--hdk);"></i>HDK</span>
+    </div>
     <div class="cal-header">
       <div class="cal-title" id="calTitle">—</div>
       <div class="cal-nav">
@@ -334,15 +363,15 @@
       </div>
       <div class="stat">
         <div class="n" id="sumUw">0</div>
-        <div class="l">UW (zaliczony)</div>
+        <div class="l">UW (rzeczywisty)</div>
       </div>
       <div class="stat">
         <div class="n" id="sumUd">0</div>
-        <div class="l">UD (zaliczony)</div>
+        <div class="l">UD (rzeczywisty)</div>
       </div>
       <div class="stat">
         <div class="n" id="sumHdk">0</div>
-        <div class="l">HDK (zaliczone)</div>
+        <div class="l">HDK (rzeczywisty)</div>
       </div>
       <div class="stat ok">
         <div class="n" id="sumRealized">0</div>
@@ -358,14 +387,15 @@
       </div>
       <div class="stat">
         <div class="n" id="sumRemainingPlanned">0</div>
-        <div class="l">pozostało zaplanowanych godzin</div>
+        <div class="l">z harmonogramu jeszcze nie potwierdzone</div>
       </div>
     </div>
     <p class="note">
       Zasady liczenia: norma okresu jest wpisywana ręcznie (z oficjalnego harmonogramu/rozkazu).
-      Do „zrealizowanych godzin” liczą się: odbyte służby oraz godziny UW, UD i HDK w danym okresie.
-      Dni oznaczone jako „Służba (zaplanowana)” nie wliczają się do realizacji, dopóki nie oznaczysz ich jako odbyte.
-      Liczba zużytych dni urlopu = godziny wpisu ÷ godzin na dzień (np. 24h służby wziętej jako urlop = 3 dni z puli).
+      Do „zrealizowanych godzin” i bilansu liczy się wyłącznie to, co wpiszesz jako <strong>Rzeczywistość</strong>
+      (odbyte służby oraz godziny UW, UD, HDK). Wpisy z sekcji <strong>Harmonogram</strong> służą tylko do
+      porównania z tym, co się faktycznie wydarzyło, i do wyliczenia normy — same z siebie nie liczą się do bilansu.
+      Liczba zużytych dni urlopu = godziny rzeczywistego wpisu ÷ godzin na dzień (np. 24h służby wziętej jako urlop = 3 dni z puli).
       HDK dolicza godziny tak, jakby służba została odbyta, ale nie zabiera dni z żadnej puli urlopu.
     </p>
   </div>
@@ -376,35 +406,50 @@
     <button class="modal-close" id="modalClose">✕</button>
     <h3 id="modalDateLabel">Data</h3>
 
-    <div class="cat-grid">
-      <button class="cat-btn" data-cat="sluzba">Służba</button>
-      <button class="cat-btn" data-cat="uw">UW (urlop wypocz.)</button>
-      <button class="cat-btn" data-cat="ud">UD (urlop dod.)</button>
-      <button class="cat-btn" data-cat="hdk">HDK</button>
-    </div>
-
-    <div id="hoursSection" style="display:none;">
-      <label>Liczba godzin</label>
-      <div class="hours-chip-row">
-        <button class="chip" data-hours="24">24h</button>
-        <button class="chip" data-hours="16">16h</button>
-        <button class="chip" data-hours="8">8h</button>
+    <div class="modal-section">
+      <div class="tag">Harmonogram (plan)</div>
+      <div class="cat-grid" data-layer="plan">
+        <button class="cat-btn" data-layer="plan" data-cat="sluzba">Służba</button>
+        <button class="cat-btn" data-layer="plan" data-cat="uw">UW</button>
+        <button class="cat-btn" data-layer="plan" data-cat="ud">UD</button>
+        <button class="cat-btn" data-layer="plan" data-cat="hdk">HDK</button>
       </div>
-      <input id="hoursCustom" type="number" min="0" step="0.5" placeholder="inna liczba godzin" style="width:100%;">
+      <div class="hours-chip-row" data-layer="plan">
+        <button class="chip" data-layer="plan" data-hours="24">24h</button>
+        <button class="chip" data-layer="plan" data-hours="16">16h</button>
+        <button class="chip" data-layer="plan" data-hours="8">8h</button>
+      </div>
+      <input class="hours-custom" data-layer="plan" type="number" min="0" step="0.5" placeholder="inna liczba godzin">
+      <div class="section-actions">
+        <button class="danger secondary btn-clear" data-layer="plan">Usuń plan</button>
+        <button class="btn-save" data-layer="plan">Zapisz plan</button>
+      </div>
     </div>
 
-    <div id="odbytaRow" style="display:none; margin-top:.6rem;">
-      <label style="display:flex; align-items:center; gap:.4rem; cursor:pointer;">
-        <input id="odbytaCheck" type="checkbox" style="width:auto;">
-        Służba już odbyta (zaznacz, jeśli nie jest to tylko plan)
-      </label>
+    <hr class="sep">
+
+    <div class="modal-section">
+      <div class="tag">Rzeczywistość</div>
+      <div class="cat-grid" data-layer="actual">
+        <button class="cat-btn" data-layer="actual" data-cat="sluzba">Służba</button>
+        <button class="cat-btn" data-layer="actual" data-cat="uw">UW</button>
+        <button class="cat-btn" data-layer="actual" data-cat="ud">UD</button>
+        <button class="cat-btn" data-layer="actual" data-cat="hdk">HDK</button>
+      </div>
+      <div class="hours-chip-row" data-layer="actual">
+        <button class="chip" data-layer="actual" data-hours="24">24h</button>
+        <button class="chip" data-layer="actual" data-hours="16">16h</button>
+        <button class="chip" data-layer="actual" data-hours="8">8h</button>
+      </div>
+      <input class="hours-custom" data-layer="actual" type="number" min="0" step="0.5" placeholder="inna liczba godzin">
+      <div class="section-actions">
+        <button class="danger secondary btn-clear" data-layer="actual">Usuń wpis</button>
+        <button class="btn-save" data-layer="actual">Zapisz</button>
+      </div>
     </div>
 
     <div class="modal-actions">
-      <button class="danger secondary" id="modalDelete" style="display:none;">Usuń wpis</button>
-      <div style="flex:1;"></div>
-      <button class="secondary" id="modalCancel">Anuluj</button>
-      <button id="modalSave">Zapisz</button>
+      <button class="secondary" id="modalCancel">Zamknij</button>
     </div>
   </div>
 </div>
@@ -413,29 +458,26 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "nadgodziny.v3";
-  const OLD_STORAGE_KEY = "nadgodziny.v2";
+  const STORAGE_KEY = "nadgodziny.v4";
+  const OLD_STORAGE_KEY = "nadgodziny.v3";
 
-  function migrateFromV2() {
+  function migrateFromV3() {
     try {
       const old = JSON.parse(localStorage.getItem(OLD_STORAGE_KEY));
       if (!old || !old.people) return null;
       const migrated = { people: {}, lastPerson: old.lastPerson || "" };
       Object.keys(old.people).forEach((name) => {
         const p = old.people[name];
-        const entries = (p.entries || [])
-          .filter((e) => e.status !== "odwolana")
-          .map((e) => {
-            let status = e.status;
-            if (status === "zaplanowana") status = "planowana";
-            if (status === "urlop") status = "uw"; // best-effort guess, split UW/UD manually if needed
-            const [sh, sm] = e.start.split(":").map(Number);
-            const [eh, em] = e.end.split(":").map(Number);
-            let startMin = sh * 60 + sm, endMin = eh * 60 + em;
-            if (endMin <= startMin) endMin += 24 * 60;
-            const hours = (endMin - startMin) / 60;
-            return { id: e.id, date: e.date, status: status, hours: hours };
-          });
+        const entries = [];
+        (p.entries || []).forEach((e) => {
+          if (e.status === "planowana") {
+            entries.push({ id: e.id, date: e.date, layer: "plan", type: "sluzba", hours: e.hours });
+          } else if (e.status === "odbyta") {
+            entries.push({ id: e.id, date: e.date, layer: "actual", type: "sluzba", hours: e.hours });
+          } else if (e.status === "uw" || e.status === "ud" || e.status === "hdk") {
+            entries.push({ id: e.id, date: e.date, layer: "actual", type: e.status, hours: e.hours });
+          }
+        });
         migrated.people[name] = {
           vacation: p.vacation || { baseDays: 26, extraDays: 13, hoursPerDay: 8 },
           periods: p.periods || [],
@@ -454,7 +496,7 @@
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (parsed && parsed.people) return parsed;
     } catch (e) { /* fall through */ }
-    const migrated = migrateFromV2();
+    const migrated = migrateFromV3();
     if (migrated) return migrated;
     return { people: {}, lastPerson: "" };
   }
@@ -472,7 +514,7 @@
       vacation: { baseDays: 26, extraDays: 13, hoursPerDay: 8 },
       periods: [],
       activePeriodId: "",
-      entries: [],
+      entries: [], // { id, date, layer: 'plan'|'actual', type: 'sluzba'|'uw'|'ud'|'hdk', hours }
     };
   }
   function ensurePerson(name) {
@@ -517,22 +559,17 @@
   const modalDateLabel = document.getElementById("modalDateLabel");
   const modalClose = document.getElementById("modalClose");
   const modalCancel = document.getElementById("modalCancel");
-  const modalSave = document.getElementById("modalSave");
-  const modalDelete = document.getElementById("modalDelete");
-  const hoursSection = document.getElementById("hoursSection");
-  const hoursCustom = document.getElementById("hoursCustom");
-  const odbytaRow = document.getElementById("odbytaRow");
-  const odbytaCheck = document.getElementById("odbytaCheck");
 
   const DOW_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Ni"];
   const MONTH_LABELS = ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
     "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"];
+  const TYPE_LABELS = { sluzba: "S", uw: "UW", ud: "UD", hdk: "HDK" };
 
   const today = new Date();
   let calYear = today.getFullYear();
   let calMonth = today.getMonth(); // 0-11
   let modalDate = null;
-  let modalCategory = null;
+  const selectedCategory = { plan: null, actual: null };
 
   function pad2(n) { return String(n).padStart(2, "0"); }
   function ymd(y, m, d) { return y + "-" + pad2(m + 1) + "-" + pad2(d); }
@@ -672,7 +709,6 @@
   function closeModal() {
     modalOverlay.classList.remove("open");
     modalDate = null;
-    modalCategory = null;
   }
   modalClose.addEventListener("click", closeModal);
   modalCancel.addEventListener("click", closeModal);
@@ -680,103 +716,110 @@
     if (ev.target === modalOverlay) closeModal();
   });
 
-  function setCategory(cat) {
-    modalCategory = cat;
-    document.querySelectorAll(".cat-btn").forEach((b) => {
+  function sectionEls(layer) {
+    return {
+      catBtns: document.querySelectorAll('.cat-btn[data-layer="' + layer + '"]'),
+      chips: document.querySelectorAll('.chip[data-layer="' + layer + '"]'),
+      customInput: document.querySelector('.hours-custom[data-layer="' + layer + '"]'),
+    };
+  }
+
+  function setCategory(layer, cat) {
+    selectedCategory[layer] = cat;
+    sectionEls(layer).catBtns.forEach((b) => {
       b.classList.toggle("active", b.getAttribute("data-cat") === cat);
     });
-    hoursSection.style.display = cat ? "block" : "none";
-    odbytaRow.style.display = cat === "sluzba" ? "block" : "none";
+  }
+
+  function setHoursValue(layer, hours) {
+    const els = sectionEls(layer);
+    els.customInput.value = hours === null || hours === undefined ? "" : hours;
+    els.chips.forEach((c) => {
+      c.classList.toggle("active", hours !== null && Number(c.getAttribute("data-hours")) === Number(hours));
+    });
   }
 
   document.querySelectorAll(".cat-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setCategory(btn.getAttribute("data-cat")));
+    btn.addEventListener("click", () => {
+      setCategory(btn.getAttribute("data-layer"), btn.getAttribute("data-cat"));
+    });
   });
   document.querySelectorAll(".chip[data-hours]").forEach((chip) => {
     chip.addEventListener("click", () => {
-      document.querySelectorAll(".chip[data-hours]").forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-      hoursCustom.value = chip.getAttribute("data-hours");
+      const layer = chip.getAttribute("data-layer");
+      setHoursValue(layer, chip.getAttribute("data-hours"));
     });
   });
-  hoursCustom.addEventListener("input", () => {
-    document.querySelectorAll(".chip[data-hours]").forEach((c) => {
-      c.classList.toggle("active", c.getAttribute("data-hours") === hoursCustom.value);
+  document.querySelectorAll(".hours-custom").forEach((input) => {
+    input.addEventListener("input", () => {
+      const layer = input.getAttribute("data-layer");
+      sectionEls(layer).chips.forEach((c) => {
+        c.classList.toggle("active", c.getAttribute("data-hours") === input.value);
+      });
     });
   });
+
+  function findEntry(person, date, layer) {
+    return person.entries.find((e) => e.date === date && e.layer === layer);
+  }
+
+  function loadSectionFromEntry(layer, entry) {
+    if (entry) {
+      setCategory(layer, entry.type);
+      setHoursValue(layer, entry.hours);
+    } else {
+      setCategory(layer, null);
+      setHoursValue(layer, null);
+    }
+  }
 
   function openModal(dateStr) {
     const person = currentPersonData();
     if (!person) { alert("Najpierw wpisz i zapisz imię osoby."); return; }
     modalDate = dateStr;
-    const existing = person.entries.find((e) => e.date === dateStr);
 
     const d = new Date(dateStr + "T00:00:00");
     modalDateLabel.textContent = d.toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-    setCategory(null);
-    hoursCustom.value = "";
-    odbytaCheck.checked = false;
-    document.querySelectorAll(".chip[data-hours]").forEach((c) => c.classList.remove("active"));
-
-    if (existing) {
-      const cat = existing.status === "odbyta" || existing.status === "planowana" ? "sluzba" : existing.status;
-      setCategory(cat);
-      hoursCustom.value = existing.hours;
-      document.querySelectorAll(".chip[data-hours]").forEach((c) => {
-        c.classList.toggle("active", Number(c.getAttribute("data-hours")) === existing.hours);
-      });
-      if (cat === "sluzba") odbytaCheck.checked = existing.status === "odbyta";
-      modalDelete.style.display = "inline-block";
-    } else {
-      modalDelete.style.display = "none";
-    }
+    loadSectionFromEntry("plan", findEntry(person, dateStr, "plan"));
+    loadSectionFromEntry("actual", findEntry(person, dateStr, "actual"));
 
     modalOverlay.classList.add("open");
   }
 
-  modalDelete.addEventListener("click", () => {
-    const person = currentPersonData();
-    if (!person || !modalDate) return;
-    person.entries = person.entries.filter((e) => e.date !== modalDate);
-    saveStore();
-    closeModal();
-    render();
+  document.querySelectorAll(".btn-save").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const layer = btn.getAttribute("data-layer");
+      const person = currentPersonData();
+      if (!person || !modalDate) return;
+      const cat = selectedCategory[layer];
+      if (!cat) { alert("Wybierz typ wpisu."); return; }
+      const hours = Number(sectionEls(layer).customInput.value);
+      if (!hours || hours <= 0) { alert("Podaj liczbę godzin."); return; }
+
+      const existing = findEntry(person, modalDate, layer);
+      if (existing) {
+        existing.type = cat;
+        existing.hours = hours;
+      } else {
+        person.entries.push({ id: uid(), date: modalDate, layer: layer, type: cat, hours: hours });
+      }
+      saveStore();
+      render();
+    });
   });
 
-  modalSave.addEventListener("click", () => {
-    const person = currentPersonData();
-    if (!person || !modalDate) return;
-    if (!modalCategory) { alert("Wybierz typ wpisu."); return; }
-    const hours = Number(hoursCustom.value);
-    if (!hours || hours <= 0) { alert("Podaj liczbę godzin."); return; }
-
-    let status;
-    if (modalCategory === "sluzba") {
-      status = odbytaCheck.checked ? "odbyta" : "planowana";
-    } else {
-      status = modalCategory; // uw / ud / hdk
-    }
-
-    const existing = person.entries.find((e) => e.date === modalDate);
-    if (existing) {
-      existing.status = status;
-      existing.hours = hours;
-    } else {
-      person.entries.push({ id: uid(), date: modalDate, status: status, hours: hours });
-    }
-    saveStore();
-    closeModal();
-    render();
+  document.querySelectorAll(".btn-clear").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const layer = btn.getAttribute("data-layer");
+      const person = currentPersonData();
+      if (!person || !modalDate) return;
+      person.entries = person.entries.filter((e) => !(e.date === modalDate && e.layer === layer));
+      saveStore();
+      loadSectionFromEntry(layer, null);
+      render();
+    });
   });
-
-  const STATUS_META = {
-    planowana: { cls: "sl-planowana", label: "S" },
-    odbyta: { cls: "sl-odbyta", label: "S" },
-    uw: { cls: "uw", label: "UW" },
-    ud: { cls: "ud", label: "UD" },
-    hdk: { cls: "hdk", label: "HDK" },
-  };
 
   function entriesForPeriod(person, period) {
     if (!period) return [];
@@ -794,9 +837,13 @@
 
     calTitle.textContent = MONTH_LABELS[calMonth] + " " + calYear;
 
-    const entryByDate = {};
+    const planByDate = {};
+    const actualByDate = {};
     if (person) {
-      person.entries.forEach((e) => { entryByDate[e.date] = e; });
+      person.entries.forEach((e) => {
+        if (e.layer === "plan") planByDate[e.date] = e;
+        else actualByDate[e.date] = e;
+      });
     }
 
     const firstOfMonth = new Date(calYear, calMonth, 1);
@@ -827,11 +874,13 @@
 
       let inner = '<div class="cal-daynum">' + cell.label + "</div>";
       if (!cell.outside) {
-        const entry = entryByDate[cell.date];
-        if (entry) {
-          const meta = STATUS_META[entry.status];
-          inner += '<div class="cal-badge ' + meta.cls + '">' + meta.label + "</div>";
-          inner += '<div class="cal-hours">' + entry.hours + "h</div>";
+        const plan = planByDate[cell.date];
+        const actual = actualByDate[cell.date];
+        if (plan) {
+          inner += '<div class="cal-badge plan type-' + plan.type + '">' + TYPE_LABELS[plan.type] + " " + plan.hours + "h</div>";
+        }
+        if (actual) {
+          inner += '<div class="cal-badge actual type-' + actual.type + '">' + TYPE_LABELS[actual.type] + " " + actual.hours + "h</div>";
         }
       }
       div.innerHTML = inner;
@@ -899,17 +948,24 @@
     let uwHours = 0;
     let udHours = 0;
     let hdkHours = 0;
-    let remainingPlanned = 0;
 
     const entries = person && activePeriod ? entriesForPeriod(person, activePeriod) : [];
+    const actualDates = new Set(entries.filter((e) => e.layer === "actual").map((e) => e.date));
+
     entries.forEach((e) => {
-      planTotal += e.hours;
-      if (e.status === "odbyta") odbyte += e.hours;
-      if (e.status === "uw") uwHours += e.hours;
-      if (e.status === "ud") udHours += e.hours;
-      if (e.status === "hdk") hdkHours += e.hours;
-      if (e.status === "planowana") remainingPlanned += e.hours;
+      if (e.layer === "plan") {
+        planTotal += e.hours;
+      } else {
+        if (e.type === "sluzba") odbyte += e.hours;
+        if (e.type === "uw") uwHours += e.hours;
+        if (e.type === "ud") udHours += e.hours;
+        if (e.type === "hdk") hdkHours += e.hours;
+      }
     });
+
+    const remainingPlanned = entries
+      .filter((e) => e.layer === "plan" && !actualDates.has(e.date))
+      .reduce((sum, e) => sum + e.hours, 0);
 
     const realized = odbyte + uwHours + udHours + hdkHours;
     const norm = activePeriod ? activePeriod.normHours : 0;
@@ -926,15 +982,16 @@
     balanceEl.textContent = (balance >= 0 ? "+" : "") + balance.toFixed(2);
     document.getElementById("sumRemainingPlanned").textContent = remainingPlanned.toFixed(2);
 
-    // vacation pools for selected year
+    // vacation pools for selected year (actual entries only)
     const year = String(Number(vacYear.value) || new Date().getFullYear());
     let uwUsedHours = 0;
     let udUsedHours = 0;
     if (person) {
       person.entries.forEach((e) => {
+        if (e.layer !== "actual") return;
         if (e.date.slice(0, 4) !== year) return;
-        if (e.status === "uw") uwUsedHours += e.hours;
-        if (e.status === "ud") udUsedHours += e.hours;
+        if (e.type === "uw") uwUsedHours += e.hours;
+        if (e.type === "ud") udUsedHours += e.hours;
       });
     }
     const hpd = vac.hoursPerDay || 8;
