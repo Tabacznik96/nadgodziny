@@ -828,15 +828,59 @@
     });
   }
 
+  const DEFAULT_HOURS = { sluzba: 24, uw: 8, ud: 8, hdk: 8, delegacja: 8, wolne: 0 };
+
+  function findEntry(person, date, layer) {
+    return person.entries.find((e) => e.date === date && e.layer === layer);
+  }
+
+  function trySaveEntry(layer, opts) {
+    opts = opts || {};
+    const person = currentPersonData();
+    if (!person || !modalDate) return false;
+    const cat = selectedCategory[layer];
+    if (!cat) {
+      if (!opts.silent) alert("Wybierz typ wpisu.");
+      return false;
+    }
+    let hours;
+    if (cat === "wolne") {
+      hours = 0;
+    } else {
+      hours = Number(sectionEls(layer).customInput.value);
+      if (!hours || hours <= 0) {
+        if (!opts.silent) alert("Podaj liczbę godzin.");
+        return false;
+      }
+    }
+    const existing = findEntry(person, modalDate, layer);
+    if (existing) {
+      existing.type = cat;
+      existing.hours = hours;
+    } else {
+      person.entries.push({ id: uid(), date: modalDate, layer: layer, type: cat, hours: hours });
+    }
+    saveStore();
+    render();
+    return true;
+  }
+
   document.querySelectorAll(".cat-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      setCategory(btn.getAttribute("data-layer"), btn.getAttribute("data-cat"));
+      const layer = btn.getAttribute("data-layer");
+      const cat = btn.getAttribute("data-cat");
+      setCategory(layer, cat);
+      if (cat !== "wolne" && !sectionEls(layer).customInput.value) {
+        setHoursValue(layer, DEFAULT_HOURS[cat]);
+      }
+      trySaveEntry(layer, { silent: true });
     });
   });
   document.querySelectorAll(".chip[data-hours]").forEach((chip) => {
     chip.addEventListener("click", () => {
       const layer = chip.getAttribute("data-layer");
       setHoursValue(layer, chip.getAttribute("data-hours"));
+      trySaveEntry(layer, { silent: true });
     });
   });
   document.querySelectorAll(".hours-custom").forEach((input) => {
@@ -846,11 +890,16 @@
         c.classList.toggle("active", c.getAttribute("data-hours") === input.value);
       });
     });
+    input.addEventListener("change", () => {
+      trySaveEntry(input.getAttribute("data-layer"), { silent: true });
+    });
+    input.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        input.blur();
+      }
+    });
   });
-
-  function findEntry(person, date, layer) {
-    return person.entries.find((e) => e.date === date && e.layer === layer);
-  }
 
   function loadSectionFromEntry(layer, entry) {
     if (entry) {
@@ -878,28 +927,7 @@
 
   document.querySelectorAll(".btn-save").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const layer = btn.getAttribute("data-layer");
-      const person = currentPersonData();
-      if (!person || !modalDate) return;
-      const cat = selectedCategory[layer];
-      if (!cat) { alert("Wybierz typ wpisu."); return; }
-      let hours;
-      if (cat === "wolne") {
-        hours = 0;
-      } else {
-        hours = Number(sectionEls(layer).customInput.value);
-        if (!hours || hours <= 0) { alert("Podaj liczbę godzin."); return; }
-      }
-
-      const existing = findEntry(person, modalDate, layer);
-      if (existing) {
-        existing.type = cat;
-        existing.hours = hours;
-      } else {
-        person.entries.push({ id: uid(), date: modalDate, layer: layer, type: cat, hours: hours });
-      }
-      saveStore();
-      render();
+      trySaveEntry(btn.getAttribute("data-layer"), { silent: false });
     });
   });
 
