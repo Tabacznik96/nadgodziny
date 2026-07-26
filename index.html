@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalkulator nadgodzin — dyżury</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1c1f24;
+    --muted: #666d78;
+    --border: #dfe3e8;
+    --accent: #2563eb;
+    --accent-text: #ffffff;
+    --danger: #dc2626;
+    --warn-bg: #fff3d6;
+    --ok-bg: #e8f6ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --card: #1d2025;
+      --text: #e8eaed;
+      --muted: #9aa1ab;
+      --border: #33373f;
+      --accent: #3b82f6;
+      --accent-text: #0b1220;
+      --warn-bg: #3a2f10;
+      --ok-bg: #123322;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 1.5rem;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+  .sub { color: var(--muted); margin: 0 0 1.25rem; font-size: .9rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; }
+  label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .25rem; }
+  input, select {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .45rem .5rem;
+    font-size: .9rem;
+  }
+  button {
+    border: none;
+    border-radius: 6px;
+    padding: .5rem .9rem;
+    font-size: .85rem;
+    cursor: pointer;
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.danger { background: var(--danger); color: #fff; }
+  table { width: 100%; border-collapse: collapse; margin-top: .75rem; font-size: .87rem; }
+  th, td { text-align: left; padding: .45rem .4rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; }
+  td input, td select { width: 100%; }
+  .actions-col { width: 40px; text-align: center; }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: .75rem;
+    margin-top: .5rem;
+  }
+  .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .6rem .75rem; }
+  .stat .n { font-size: 1.25rem; font-weight: 700; }
+  .stat .l { font-size: .75rem; color: var(--muted); }
+  .stat.ot50 { background: var(--warn-bg); }
+  .stat.ot100 { background: var(--ok-bg); }
+  .note { font-size: .78rem; color: var(--muted); margin-top: .75rem; line-height: 1.4; }
+  .topbar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; }
+  .who { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+  .pill {
+    font-size: .75rem;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Kalkulator nadgodzin — dyżury</h1>
+  <p class="sub">Każda osoba wpisuje swoje imię i prowadzi własną listę dyżurów. Dane zapisują się tylko w tej przeglądarce (localStorage), oddzielnie dla każdego imienia.</p>
+
+  <div class="card">
+    <div class="topbar">
+      <div class="who">
+        <div>
+          <label for="personSelect">Osoba</label>
+          <select id="personSelect"></select>
+        </div>
+        <div>
+          <label for="personName">Imię / nazwisko</label>
+          <input id="personName" type="text" placeholder="np. Jan Kowalski">
+        </div>
+        <button id="savePerson">Zapisz osobę</button>
+        <button id="deletePerson" class="danger secondary">Usuń osobę</button>
+      </div>
+      <div>
+        <label for="monthPicker">Miesiąc rozliczeniowy</label>
+        <input id="monthPicker" type="month">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="fDate">Data rozpoczęcia dyżuru</label>
+        <input id="fDate" type="date">
+      </div>
+      <div>
+        <label for="fStart">Początek</label>
+        <input id="fStart" type="time" value="08:00">
+      </div>
+      <div>
+        <label for="fEnd">Koniec</label>
+        <input id="fEnd" type="time" value="16:00">
+      </div>
+      <div>
+        <label for="fBreak">Przerwa (min)</label>
+        <input id="fBreak" type="number" min="0" step="5" value="0" style="width:80px">
+      </div>
+      <div>
+        <label for="fType">Typ dnia</label>
+        <select id="fType">
+          <option value="roboczy">Dzień roboczy</option>
+          <option value="wolny">Niedziela / święto / dzień wolny</option>
+        </select>
+      </div>
+      <div>
+        <button id="addShift">Dodaj dyżur</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Początek</th>
+          <th>Koniec</th>
+          <th>Przerwa</th>
+          <th>Typ dnia</th>
+          <th>Godziny</th>
+          <th class="actions-col"></th>
+        </tr>
+      </thead>
+      <tbody id="shiftRows"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <strong>Podsumowanie miesiąca</strong>
+    <div class="summary-grid">
+      <div class="stat">
+        <div class="n" id="sumWorked">0</div>
+        <div class="l">przepracowane godziny</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="sumNorm">0</div>
+        <div class="l">norma miesięczna</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="sumNormal">0</div>
+        <div class="l">godziny w normie</div>
+      </div>
+      <div class="stat ot50">
+        <div class="n" id="sumOt50">0</div>
+        <div class="l">nadgodziny 50%</div>
+      </div>
+      <div class="stat ot100">
+        <div class="n" id="sumOt100">0</div>
+        <div class="l">nadgodziny 100%</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="sumOtTotal">0</div>
+        <div class="l">nadgodziny razem</div>
+      </div>
+    </div>
+    <p class="note">
+      Zasady liczenia (uproszczone, orientacyjne — nie zastępują wyliczeń kadrowo-płacowych):
+      norma miesięczna = liczba dni roboczych pon.–pt. w miesiącu (bez świąt ustawowych) × 8h.
+      Godziny ponad 8h w dyżurze oznaczonym jako „dzień roboczy” liczone są jako nadgodziny 50%.
+      Cały czas przepracowany w dniu oznaczonym jako „niedziela / święto / dzień wolny” liczony jest jako nadgodziny 100%.
+      Jeśli po odjęciu nadgodzin dobowych suma godzin nadal przekracza normę miesięczną, nadwyżka doliczana jest do nadgodzin 50%.
+    </p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEY = "nadgodziny.v1";
+
+  function loadStore() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { people: {}, lastPerson: "" };
+    } catch (e) {
+      return { people: {}, lastPerson: "" };
+    }
+  }
+  function saveStore(store) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  }
+
+  let store = loadStore();
+
+  function currentMonthValue() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+
+  // ---- Polish public holidays (fixed + movable via Easter) ----
+  function easterSunday(year) {
+    // Anonymous Gregorian algorithm
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+  }
+  function addDays(date, n) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + n);
+    return d;
+  }
+  function dateKey(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function polishHolidays(year) {
+    const easter = easterSunday(year);
+    const dates = [
+      new Date(year, 0, 1),
+      new Date(year, 0, 6),
+      easter,
+      addDays(easter, 1),
+      new Date(year, 4, 1),
+      new Date(year, 4, 3),
+      addDays(easter, 49),
+      addDays(easter, 60),
+      new Date(year, 7, 15),
+      new Date(year, 10, 1),
+      new Date(year, 10, 11),
+      new Date(year, 11, 25),
+      new Date(year, 11, 26),
+    ];
+    return new Set(dates.map(dateKey));
+  }
+
+  function monthlyNormHours(year, monthIndex0) {
+    const holidays = polishHolidays(year);
+    const daysInMonth = new Date(year, monthIndex0 + 1, 0).getDate();
+    let workDays = 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, monthIndex0, day);
+      const dow = d.getDay(); // 0 = Sun, 6 = Sat
+      if (dow === 0 || dow === 6) continue;
+      if (holidays.has(dateKey(d))) continue;
+      workDays++;
+    }
+    return workDays * 8;
+  }
+
+  // ---- Shift duration ----
+  function shiftHours(startHHMM, endHHMM, breakMin) {
+    const [sh, sm] = startHHMM.split(":").map(Number);
+    const [eh, em] = endHHMM.split(":").map(Number);
+    let startMin = sh * 60 + sm;
+    let endMin = eh * 60 + em;
+    if (endMin <= startMin) endMin += 24 * 60; // crosses midnight
+    const totalMin = endMin - startMin - (Number(breakMin) || 0);
+    return Math.max(0, totalMin / 60);
+  }
+
+  // ---- DOM refs ----
+  const personSelect = document.getElementById("personSelect");
+  const personName = document.getElementById("personName");
+  const savePersonBtn = document.getElementById("savePerson");
+  const deletePersonBtn = document.getElementById("deletePerson");
+  const monthPicker = document.getElementById("monthPicker");
+  const shiftRows = document.getElementById("shiftRows");
+
+  const fDate = document.getElementById("fDate");
+  const fStart = document.getElementById("fStart");
+  const fEnd = document.getElementById("fEnd");
+  const fBreak = document.getElementById("fBreak");
+  const fType = document.getElementById("fType");
+  const addShiftBtn = document.getElementById("addShift");
+
+  function peopleNames() {
+    return Object.keys(store.people).sort((a, b) => a.localeCompare(b, "pl"));
+  }
+
+  function refreshPersonSelect() {
+    personSelect.innerHTML = "";
+    const names = peopleNames();
+    if (names.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "— brak osób —";
+      personSelect.appendChild(opt);
+      return;
+    }
+    names.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      personSelect.appendChild(opt);
+    });
+  }
+
+  function activePerson() {
+    return store.lastPerson;
+  }
+
+  function ensurePerson(name) {
+    if (!store.people[name]) {
+      store.people[name] = { shifts: [] };
+    }
+  }
+
+  function setActivePerson(name) {
+    store.lastPerson = name;
+    personName.value = name;
+    personSelect.value = name;
+    saveStore(store);
+    render();
+  }
+
+  savePersonBtn.addEventListener("click", () => {
+    const name = personName.value.trim();
+    if (!name) return;
+    ensurePerson(name);
+    setActivePerson(name);
+    refreshPersonSelect();
+    personSelect.value = name;
+  });
+
+  deletePersonBtn.addEventListener("click", () => {
+    const name = activePerson();
+    if (!name || !store.people[name]) return;
+    if (!confirm('Usunąć osobę "' + name + '" wraz z jej dyżurami?')) return;
+    delete store.people[name];
+    const remaining = peopleNames();
+    store.lastPerson = remaining[0] || "";
+    saveStore(store);
+    refreshPersonSelect();
+    personName.value = store.lastPerson;
+    render();
+  });
+
+  personSelect.addEventListener("change", () => {
+    if (personSelect.value) setActivePerson(personSelect.value);
+  });
+
+  monthPicker.addEventListener("change", render);
+
+  addShiftBtn.addEventListener("click", () => {
+    const name = activePerson();
+    if (!name) {
+      alert("Najpierw wpisz i zapisz imię osoby.");
+      return;
+    }
+    if (!fDate.value || !fStart.value || !fEnd.value) {
+      alert("Uzupełnij datę oraz godziny początku i końca.");
+      return;
+    }
+    ensurePerson(name);
+    store.people[name].shifts.push({
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+      date: fDate.value,
+      start: fStart.value,
+      end: fEnd.value,
+      breakMin: Number(fBreak.value) || 0,
+      type: fType.value,
+    });
+    saveStore(store);
+    render();
+  });
+
+  function removeShift(id) {
+    const name = activePerson();
+    if (!name) return;
+    store.people[name].shifts = store.people[name].shifts.filter((s) => s.id !== id);
+    saveStore(store);
+    render();
+  }
+
+  function shiftsForMonth(name, ym) {
+    if (!store.people[name]) return [];
+    return store.people[name].shifts
+      .filter((s) => s.date.slice(0, 7) === ym)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+  }
+
+  function render() {
+    const names = peopleNames();
+    if (names.length && !names.includes(store.lastPerson)) {
+      store.lastPerson = names[0];
+    }
+    refreshPersonSelect();
+    personSelect.value = store.lastPerson || "";
+    personName.value = store.lastPerson || "";
+
+    const name = activePerson();
+    const ym = monthPicker.value || currentMonthValue();
+    monthPicker.value = ym;
+
+    shiftRows.innerHTML = "";
+    let workedTotal = 0;
+    let ot50FromDaily = 0;
+    let ot100 = 0;
+    let normalPortion = 0;
+
+    const shifts = name ? shiftsForMonth(name, ym) : [];
+
+    shifts.forEach((s) => {
+      const hours = shiftHours(s.start, s.end, s.breakMin);
+      workedTotal += hours;
+
+      if (s.type === "wolny") {
+        ot100 += hours;
+      } else {
+        const daily = Math.min(hours, 8);
+        const dailyOt = Math.max(0, hours - 8);
+        normalPortion += daily;
+        ot50FromDaily += dailyOt;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + s.date + "</td>" +
+        "<td>" + s.start + "</td>" +
+        "<td>" + s.end + "</td>" +
+        "<td>" + s.breakMin + " min</td>" +
+        "<td>" + (s.type === "wolny" ? "Niedziela/święto/wolne" : "Roboczy") + "</td>" +
+        "<td>" + hours.toFixed(2) + " h</td>" +
+        '<td class="actions-col"><button class="secondary danger" data-id="' + s.id + '">✕</button></td>';
+      shiftRows.appendChild(tr);
+    });
+
+    shiftRows.querySelectorAll("button[data-id]").forEach((btn) => {
+      btn.addEventListener("click", () => removeShift(btn.getAttribute("data-id")));
+    });
+
+    const [year, month] = ym.split("-").map(Number);
+    const norm = monthlyNormHours(year, month - 1);
+
+    // Excess above monthly norm (after removing daily-overtime hours already counted) is 50% too
+    const weeklyExcess = Math.max(0, normalPortion - norm);
+    const ot50 = ot50FromDaily + weeklyExcess;
+    const normalCounted = normalPortion - weeklyExcess;
+
+    document.getElementById("sumWorked").textContent = workedTotal.toFixed(2);
+    document.getElementById("sumNorm").textContent = norm.toFixed(2);
+    document.getElementById("sumNormal").textContent = normalCounted.toFixed(2);
+    document.getElementById("sumOt50").textContent = ot50.toFixed(2);
+    document.getElementById("sumOt100").textContent = ot100.toFixed(2);
+    document.getElementById("sumOtTotal").textContent = (ot50 + ot100).toFixed(2);
+  }
+
+  // ---- init ----
+  fDate.value = new Date().toISOString().slice(0, 10);
+  monthPicker.value = currentMonthValue();
+  if (!store.lastPerson) {
+    const names = peopleNames();
+    store.lastPerson = names[0] || "";
+  }
+  render();
+})();
+</script>
+</body>
+</html>
