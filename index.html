@@ -22,6 +22,7 @@
     --ud: #d97706;
     --hdk: #0d9488;
     --sl: #2563eb;
+    --del: #7c3aed;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -39,6 +40,7 @@
       --ud: #fbbf24;
       --hdk: #2dd4bf;
       --sl: #60a5fa;
+      --del: #a78bfa;
     }
   }
   * { box-sizing: border-box; }
@@ -155,11 +157,13 @@
   .cal-badge.plan.type-uw { border-color: var(--uw); color: var(--uw); }
   .cal-badge.plan.type-ud { border-color: var(--ud); color: var(--ud); }
   .cal-badge.plan.type-hdk { border-color: var(--hdk); color: var(--hdk); }
+  .cal-badge.plan.type-delegacja { border-color: var(--del); color: var(--del); }
   .cal-badge.plan.type-wolne { border-color: var(--muted); color: var(--muted); }
   .cal-badge.actual.type-sluzba { background: var(--sl); color: #fff; }
   .cal-badge.actual.type-uw { background: var(--uw); color: #fff; }
   .cal-badge.actual.type-ud { background: var(--ud); color: #fff; }
   .cal-badge.actual.type-hdk { background: var(--hdk); color: #fff; }
+  .cal-badge.actual.type-delegacja { background: var(--del); color: #fff; }
   .cal-badge.actual.type-wolne { background: var(--muted); color: #fff; }
 
   /* modal */
@@ -258,6 +262,19 @@
     <hr class="sep">
     <div class="row">
       <div>
+        <label for="quickYear">Rok (do szybkiego wypełnienia)</label>
+        <input id="quickYear" type="number" style="width:100px">
+      </div>
+      <div>
+        <button class="secondary" id="quickH1" type="button">Wypełnij: I półrocze (01.01–30.06)</button>
+      </div>
+      <div>
+        <button class="secondary" id="quickH2" type="button">Wypełnij: II półrocze (01.07–31.12)</button>
+      </div>
+    </div>
+    <p class="small">Daty dwóch stałych okresów rozliczeniowych się nie zmieniają, zmienia się tylko norma godzin — powyższe przyciski tylko wypełniają pola poniżej, dalej trzeba kliknąć „Dodaj okres”.</p>
+    <div class="row">
+      <div>
         <label for="pName">Nazwa okresu</label>
         <input id="pName" type="text" placeholder="np. I półrocze 2026" style="width:200px">
       </div>
@@ -277,6 +294,21 @@
         <button id="addPeriod">Dodaj okres</button>
       </div>
     </div>
+    <hr class="sep">
+    <h2 style="margin-top:0;">Porównanie wszystkich okresów</h2>
+    <table id="periodsTable" style="width:100%; border-collapse:collapse; font-size:.87rem;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:.4rem; border-bottom:1px solid var(--border); font-size:.72rem; color:var(--muted); text-transform:uppercase;">Okres</th>
+          <th style="text-align:left; padding:.4rem; border-bottom:1px solid var(--border); font-size:.72rem; color:var(--muted); text-transform:uppercase;">Zakres dat</th>
+          <th style="text-align:right; padding:.4rem; border-bottom:1px solid var(--border); font-size:.72rem; color:var(--muted); text-transform:uppercase;">Norma</th>
+          <th style="text-align:right; padding:.4rem; border-bottom:1px solid var(--border); font-size:.72rem; color:var(--muted); text-transform:uppercase;">Zrealizowane</th>
+          <th style="text-align:right; padding:.4rem; border-bottom:1px solid var(--border); font-size:.72rem; color:var(--muted); text-transform:uppercase;">Bilans</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="periodsTableBody"></tbody>
+    </table>
   </div>
 
   <div class="card">
@@ -338,6 +370,8 @@
       <span><i style="background:var(--uw);"></i>UW</span>
       <span><i style="background:var(--ud);"></i>UD</span>
       <span><i style="background:var(--hdk);"></i>HDK</span>
+      <span><i style="background:var(--del);"></i>Delegacja</span>
+      <span><i style="background:var(--muted);"></i>Wolne</span>
     </div>
     <div class="cal-header">
       <div class="cal-title" id="calTitle">—</div>
@@ -374,6 +408,10 @@
       <div class="stat">
         <div class="n" id="sumHdk">0</div>
         <div class="l">HDK (rzeczywisty)</div>
+      </div>
+      <div class="stat">
+        <div class="n" id="sumDelegacja">0</div>
+        <div class="l">Delegacja (rzeczywista)</div>
       </div>
       <div class="stat ok">
         <div class="n" id="sumRealized">0</div>
@@ -413,6 +451,8 @@
       obniżają bilans (jesteś na minusie względem planu) i pokazują się osobno jako „odwołane służby”.
       Liczba zużytych dni urlopu = godziny rzeczywistego wpisu ÷ godzin na dzień (np. 24h służby wziętej jako urlop = 3 dni z puli).
       HDK dolicza godziny tak, jakby służba została odbyta, ale nie zabiera dni z żadnej puli urlopu.
+      Delegacja liczy się tak samo jak HDK — dolicza wpisaną liczbę godzin do realizacji normy,
+      bez wpływu na pulę urlopu (np. wyjazd służbowy na 5 godzin wpisujesz jako Delegacja, 5h).
     </p>
   </div>
 </div>
@@ -429,7 +469,8 @@
         <button class="cat-btn" data-layer="plan" data-cat="uw">UW</button>
         <button class="cat-btn" data-layer="plan" data-cat="ud">UD</button>
         <button class="cat-btn" data-layer="plan" data-cat="hdk">HDK</button>
-        <button class="cat-btn" data-layer="plan" data-cat="wolne" style="grid-column: span 2;">Wolne (bez służby)</button>
+        <button class="cat-btn" data-layer="plan" data-cat="wolne">Wolne (bez służby)</button>
+        <button class="cat-btn" data-layer="plan" data-cat="delegacja">Delegacja</button>
       </div>
       <div class="hours-block" data-layer="plan">
         <div class="hours-chip-row" data-layer="plan">
@@ -455,7 +496,8 @@
         <button class="cat-btn" data-layer="actual" data-cat="uw">UW</button>
         <button class="cat-btn" data-layer="actual" data-cat="ud">UD</button>
         <button class="cat-btn" data-layer="actual" data-cat="hdk">HDK</button>
-        <button class="cat-btn" data-layer="actual" data-cat="wolne" style="grid-column: span 2;">Wolne (służby nie było)</button>
+        <button class="cat-btn" data-layer="actual" data-cat="wolne">Wolne (służby nie było)</button>
+        <button class="cat-btn" data-layer="actual" data-cat="delegacja">Delegacja</button>
       </div>
       <div class="hours-block" data-layer="actual">
         <div class="hours-chip-row" data-layer="actual">
@@ -564,6 +606,10 @@
   const pEnd = document.getElementById("pEnd");
   const pNorm = document.getElementById("pNorm");
   const addPeriodBtn = document.getElementById("addPeriod");
+  const quickYear = document.getElementById("quickYear");
+  const quickH1 = document.getElementById("quickH1");
+  const quickH2 = document.getElementById("quickH2");
+  const periodsTableBody = document.getElementById("periodsTableBody");
 
   const vacYear = document.getElementById("vacYear");
   const vacBase = document.getElementById("vacBase");
@@ -587,7 +633,7 @@
   const DOW_LABELS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Ni"];
   const MONTH_LABELS = ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
     "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"];
-  const TYPE_LABELS = { sluzba: "S", uw: "UW", ud: "UD", hdk: "HDK", wolne: "WOLNE" };
+  const TYPE_LABELS = { sluzba: "S", uw: "UW", ud: "UD", hdk: "HDK", wolne: "WOLNE", delegacja: "DEL" };
 
   const today = new Date();
   let calYear = today.getFullYear();
@@ -675,6 +721,19 @@
     pEnd.value = "";
     pNorm.value = "";
     render();
+  });
+
+  quickH1.addEventListener("click", () => {
+    const y = Number(quickYear.value) || new Date().getFullYear();
+    pStart.value = y + "-01-01";
+    pEnd.value = y + "-06-30";
+    if (!pName.value.trim()) pName.value = "I półrocze " + y;
+  });
+  quickH2.addEventListener("click", () => {
+    const y = Number(quickYear.value) || new Date().getFullYear();
+    pStart.value = y + "-07-01";
+    pEnd.value = y + "-12-31";
+    if (!pName.value.trim()) pName.value = "II półrocze " + y;
   });
 
   periodSelect.addEventListener("change", () => {
@@ -861,6 +920,53 @@
     return person.entries.filter((e) => e.date >= period.start && e.date <= period.end);
   }
 
+  function computePeriodStats(person, period) {
+    const entries = entriesForPeriod(person, period);
+    const actualDates = new Set(entries.filter((e) => e.layer === "actual").map((e) => e.date));
+    const planMap = {};
+    const actualMap = {};
+    entries.forEach((e) => {
+      if (e.layer === "plan") planMap[e.date] = e;
+      else actualMap[e.date] = e;
+    });
+
+    let planTotal = 0, odbyte = 0, uwHours = 0, udHours = 0, hdkHours = 0, delegacjaHours = 0;
+    let callInHours = 0, missedHours = 0;
+
+    entries.forEach((e) => {
+      if (e.layer === "plan") {
+        planTotal += e.hours;
+        if (e.type !== "wolne") {
+          const actual = actualMap[e.date];
+          if (actual && actual.type === "wolne") missedHours += e.hours;
+        }
+      } else {
+        if (e.type === "sluzba") {
+          odbyte += e.hours;
+          const plan = planMap[e.date];
+          if (plan && plan.type === "wolne") callInHours += e.hours;
+        }
+        if (e.type === "uw") uwHours += e.hours;
+        if (e.type === "ud") udHours += e.hours;
+        if (e.type === "hdk") hdkHours += e.hours;
+        if (e.type === "delegacja") delegacjaHours += e.hours;
+      }
+    });
+
+    const remainingPlanned = entries
+      .filter((e) => e.layer === "plan" && e.type !== "wolne" && !actualDates.has(e.date))
+      .reduce((sum, e) => sum + e.hours, 0);
+
+    const realized = odbyte + uwHours + udHours + hdkHours + delegacjaHours;
+    const norm = period ? period.normHours : 0;
+    const balance = realized - norm;
+
+    return {
+      planTotal, odbyte, uwHours, udHours, hdkHours, delegacjaHours,
+      callInHours, missedHours, remainingPlanned, realized, norm, balance,
+    };
+  }
+
   function renderCalendar(person) {
     calDow.innerHTML = "";
     DOW_LABELS.forEach((d) => {
@@ -980,62 +1086,57 @@
     renderCalendar(person);
 
     // period summary
-    let planTotal = 0;
-    let odbyte = 0;
-    let uwHours = 0;
-    let udHours = 0;
-    let hdkHours = 0;
-    let callInHours = 0;
-    let missedHours = 0;
+    const stats = computePeriodStats(person, activePeriod);
 
-    const entries = person && activePeriod ? entriesForPeriod(person, activePeriod) : [];
-    const actualDates = new Set(entries.filter((e) => e.layer === "actual").map((e) => e.date));
-    const planMap = {};
-    const actualMap = {};
-    entries.forEach((e) => {
-      if (e.layer === "plan") planMap[e.date] = e;
-      else actualMap[e.date] = e;
-    });
-
-    entries.forEach((e) => {
-      if (e.layer === "plan") {
-        planTotal += e.hours;
-        if (e.type !== "wolne") {
-          const actual = actualMap[e.date];
-          if (actual && actual.type === "wolne") missedHours += e.hours;
-        }
-      } else {
-        if (e.type === "sluzba") {
-          odbyte += e.hours;
-          const plan = planMap[e.date];
-          if (plan && plan.type === "wolne") callInHours += e.hours;
-        }
-        if (e.type === "uw") uwHours += e.hours;
-        if (e.type === "ud") udHours += e.hours;
-        if (e.type === "hdk") hdkHours += e.hours;
-      }
-    });
-
-    const remainingPlanned = entries
-      .filter((e) => e.layer === "plan" && e.type !== "wolne" && !actualDates.has(e.date))
-      .reduce((sum, e) => sum + e.hours, 0);
-
-    const realized = odbyte + uwHours + udHours + hdkHours;
-    const norm = activePeriod ? activePeriod.normHours : 0;
-    const balance = realized - norm;
-
-    document.getElementById("sumPlanTotal").textContent = planTotal.toFixed(2);
-    document.getElementById("sumOdbyte").textContent = odbyte.toFixed(2);
-    document.getElementById("sumUw").textContent = uwHours.toFixed(2);
-    document.getElementById("sumUd").textContent = udHours.toFixed(2);
-    document.getElementById("sumHdk").textContent = hdkHours.toFixed(2);
-    document.getElementById("sumRealized").textContent = realized.toFixed(2);
-    document.getElementById("sumNorm").textContent = norm.toFixed(2);
+    document.getElementById("sumPlanTotal").textContent = stats.planTotal.toFixed(2);
+    document.getElementById("sumOdbyte").textContent = stats.odbyte.toFixed(2);
+    document.getElementById("sumUw").textContent = stats.uwHours.toFixed(2);
+    document.getElementById("sumUd").textContent = stats.udHours.toFixed(2);
+    document.getElementById("sumHdk").textContent = stats.hdkHours.toFixed(2);
+    document.getElementById("sumDelegacja").textContent = stats.delegacjaHours.toFixed(2);
+    document.getElementById("sumRealized").textContent = stats.realized.toFixed(2);
+    document.getElementById("sumNorm").textContent = stats.norm.toFixed(2);
     const balanceEl = document.getElementById("sumBalance");
-    balanceEl.textContent = (balance >= 0 ? "+" : "") + balance.toFixed(2);
-    document.getElementById("sumRemainingPlanned").textContent = remainingPlanned.toFixed(2);
-    document.getElementById("sumCallIn").textContent = callInHours.toFixed(2);
-    document.getElementById("sumMissed").textContent = missedHours.toFixed(2);
+    balanceEl.textContent = (stats.balance >= 0 ? "+" : "") + stats.balance.toFixed(2);
+    document.getElementById("sumRemainingPlanned").textContent = stats.remainingPlanned.toFixed(2);
+    document.getElementById("sumCallIn").textContent = stats.callInHours.toFixed(2);
+    document.getElementById("sumMissed").textContent = stats.missedHours.toFixed(2);
+
+    // periods comparison table
+    periodsTableBody.innerHTML = "";
+    if (person && person.periods.length) {
+      person.periods
+        .slice()
+        .sort((a, b) => a.start.localeCompare(b.start))
+        .forEach((p) => {
+          const s = computePeriodStats(person, p);
+          const tr = document.createElement("tr");
+          const isActive = p.id === person.activePeriodId;
+          tr.style.fontWeight = isActive ? "700" : "400";
+          tr.innerHTML =
+            '<td style="padding:.4rem; border-bottom:1px solid var(--border);">' + p.name + "</td>" +
+            '<td style="padding:.4rem; border-bottom:1px solid var(--border); white-space:nowrap;">' + p.start + " – " + p.end + "</td>" +
+            '<td style="padding:.4rem; border-bottom:1px solid var(--border); text-align:right;">' + s.norm.toFixed(2) + "</td>" +
+            '<td style="padding:.4rem; border-bottom:1px solid var(--border); text-align:right;">' + s.realized.toFixed(2) + "</td>" +
+            '<td style="padding:.4rem; border-bottom:1px solid var(--border); text-align:right;">' + (s.balance >= 0 ? "+" : "") + s.balance.toFixed(2) + "</td>" +
+            '<td style="padding:.4rem; border-bottom:1px solid var(--border); text-align:right;">' +
+              (isActive ? '<span class="small">aktywny</span>' : '<button class="secondary" data-show-period="' + p.id + '">Pokaż</button>') +
+            "</td>";
+          periodsTableBody.appendChild(tr);
+        });
+      periodsTableBody.querySelectorAll("button[data-show-period]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const pid = btn.getAttribute("data-show-period");
+          const p2 = currentPersonData();
+          if (!p2) return;
+          p2.activePeriodId = pid;
+          saveStore();
+          render();
+        });
+      });
+    } else {
+      periodsTableBody.innerHTML = '<tr><td colspan="6" class="small" style="padding:.4rem;">Brak okresów.</td></tr>';
+    }
 
     // vacation pools for selected year (actual entries only)
     const year = String(Number(vacYear.value) || new Date().getFullYear());
@@ -1061,6 +1162,7 @@
   }
 
   // ---- init ----
+  quickYear.value = today.getFullYear();
   if (!store.lastPerson) {
     const names = peopleNames();
     store.lastPerson = names[0] || "";
